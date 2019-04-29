@@ -1,0 +1,407 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_unsigned.ALL;
+use ieee.numeric_std.all;
+
+entity register8 is
+    port
+    (
+			d   : IN STD_LOGIC_VECTOR(7 DOWNTO 0) := "00000000";
+			q   : OUT STD_LOGIC_VECTOR(7 DOWNTO 0) -- output
+    );
+end register8;
+ARCHITECTURE description OF register8 IS
+	signal a	: std_LOGIC_VECTOR(7 downto 0);
+BEGIN
+   process(d)
+	begin
+		q <= d;
+	end process;
+END description;
+
+
+
+
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_unsigned.ALL;
+use ieee.numeric_std.all;
+
+entity seg7out is port(
+
+	regBits	: in std_LOGIC_VECTOR (7 downto 0);
+	
+	result	: out std_LOGIC_VECTOR(13 downto 0)
+
+	);
+end seg7out;
+architecture Behavioral of seg7out is
+
+shared variable bitsA : std_LOGIC_VECTOR(3 downto 0);
+shared variable bitsB : std_LOGIC_VECTOR(3 downto 0);
+		
+shared variable seg7a : std_LOGIC_VECTOR(6 downto 0);
+shared variable seg7b : std_LOGIC_VECTOR(6 downto 0);
+
+begin
+	
+	process(regBits)
+	begin
+		bitsA := regBits(7 downto 4);
+		bitsB := regBits(3 downto 0);
+		
+		case bitsA is
+        when "0000"=> seg7a :="0000001";  -- '0'
+        when "0001"=> seg7a :="1001111";  -- '1'
+        when "0010"=> seg7a :="0010010";  -- '2'
+        when "0011"=> seg7a :="0000110";  -- '3'
+        when "0100"=> seg7a :="1001100";  -- '4' 
+        when "0101"=> seg7a :="0100100";  -- '5'
+        when "0110"=> seg7a :="0100000";  -- '6'
+        when "0111"=> seg7a :="0001111";  -- '7'
+        when "1000"=> seg7a :="0000000";  -- '8'
+        when "1001"=> seg7a :="0000100";  -- '9'
+        when "1010"=> seg7a :="0001000";  -- 'A'
+        when "1011"=> seg7a :="1100000";  -- 'B'
+        when "1100"=> seg7a :="0110001";  -- 'C'
+        when "1101"=> seg7a :="1000010";  -- 'D'
+        when "1110"=> seg7a :="0110000";  -- 'E'
+        when "1111"=> seg7a :="0111000";  -- 'F'
+        when others =>  NULL;
+		end case;
+	 
+		case bitsB is
+        when "0000"=> seg7b :="0000001";  -- '0'
+        when "0001"=> seg7b :="1001111";  -- '1'
+        when "0010"=> seg7b :="0010010";  -- '2'
+        when "0011"=> seg7b :="0000110";  -- '3'
+        when "0100"=> seg7b :="1001100";  -- '4' 
+        when "0101"=> seg7b :="0100100";  -- '5'
+        when "0110"=> seg7b :="0100000";  -- '6'
+        when "0111"=> seg7b :="0001111";  -- '7'
+        when "1000"=> seg7b :="0000000";  -- '8'
+        when "1001"=> seg7b :="0000100";  -- '9'
+        when "1010"=> seg7b :="0001000";  -- 'A'
+        when "1011"=> seg7b :="1100000";  -- 'b'
+        when "1100"=> seg7b :="0110001";  -- 'C'
+        when "1101"=> seg7b :="1000010";  -- 'd'
+        when "1110"=> seg7b :="0110000";  -- 'E'
+        when "1111"=> seg7b :="0111000";  -- 'F'
+        when others =>  NULL;
+		end case;
+	
+		result <= seg7a & seg7b;
+	
+	end process;
+
+end Behavioral;
+
+
+
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_unsigned.ALL;
+use ieee.numeric_std.all;
+
+ENTITY microARM IS PORT(
+	input :	in 	std_LOGIC_VECTOR(15 downto 0);
+	exe	:	in		std_LOGIC;
+	upd	:	in		std_LOGIC;
+	
+	output:	out	std_LOGIC_VECTOR(13 downto 0)
+	);
+END microARM;
+ARCHITECTURE Behavioral OF microARM IS
+
+	shared variable byte1 : std_LOGIC_VECTOR(3 downto 0); --is this how it is
+	shared variable byte2 : std_LOGIC_VECTOR(3 downto 0); --is this how it is
+	shared variable byte3 : std_LOGIC_VECTOR(3 downto 0); --is this how it is
+	shared variable byte4 : std_LOGIC_VECTOR(3 downto 0); --is this how it is
+	
+	shared variable constK: std_LOGIC_VECTOR(2 downto 0);
+	shared variable last3 : std_LOGIC_VECTOR(2 downto 0);
+	
+	--signal a	: std_LOGIC_VECTOR(7 downto 0);
+	
+	--signal registerTemp :    entity work.register8;
+	signal registerTemp :    std_LOGIC_VECTOR(7 downto 0);
+	signal register0 :	std_LOGIC_VECTOR(7 downto 0);
+	signal register1 :	std_LOGIC_VECTOR(7 downto 0);
+	
+	component seg7out is
+        port (regBits : in std_LOGIC_VECTOR(7 downto 0);
+				  result : out std_LOGIC_VECTOR(13 downto 0));
+    end component;
+
+BEGIN
+
+	--register0    :    entity work.register8;
+	--register1    :    entity work.register8;
+	
+	
+	
+	process(input,exe,upd) is
+	
+	begin
+	
+	byte1(3 downto 0) := input(15 downto 12);
+	byte2(3 downto 0) := input(11 downto 8);
+	byte3(3 downto 0) := input(7 downto 4);
+	byte4(3 downto 0) := input(3 downto 0);
+	
+	constK(2 downto 0) := input(8 downto 6);
+	last3(2 downto 0) := input(2 downto 0);
+	
+	if exe = '1' then
+	case byte1 is
+		when "0001" => --add/subtract
+		
+			if byte2 = "1000" then 					--add 2 registers
+					if last3 = "001" then 
+							registerTemp <= register0 + register1;
+							if upd = '1' then
+								register1 <= registerTemp;
+							end if;
+					else
+							registerTemp <= register0 + register1;
+							if upd = '1' then
+								register0 <= registerTemp;
+							end if;
+					end if;
+			elsif byte2 = "1100" then 				--add constant
+					if byte4 = "1000" then
+							registerTemp <= register1 + constK;
+							if upd = '1' then
+								register0 <= registerTemp;
+							end if;
+					elsif byte4 = "1001" then
+							registerTemp <= register1 + constK;	
+							if upd = '1' then
+								register1 <= registerTemp;
+							end if;
+					elsif byte4 = "0000" then
+							registerTemp <= register0 + constK;
+							if upd = '1' then
+								register0 <= registerTemp;
+							end if;
+					elsif byte4 = "0001" then	
+							registerTemp <= register0 + constK;
+							if upd = '1' then
+								register1 <= registerTemp;
+							end if;
+					end if;
+			elsif byte2 = "1010" then 				--subtract 2 registers
+					if last3 = "001" then
+							if byte3 = "0100" then
+									registerTemp <= register1 - register0;
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+							else
+									registerTemp <= register0 - register1;
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+							end if;
+					else
+							if byte3 = "0100" then
+									registerTemp <= register1 - register0;
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+							else
+									registerTemp <= register0 - register1;
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+							end if;
+					end if;
+			elsif byte2 = "1110" then 				--subtract constant
+					if last3 = "001" then
+							if byte3 = "0100" then
+									registerTemp <= register1 - constK;
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+							else
+									registerTemp <= register0 - constK;
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+							end if;
+					else
+							if byte3 = "0100" then
+									registerTemp <= register1 - constK;
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+							else
+									registerTemp <= register0 - constK;
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+							end if;
+					end if;
+			end if;
+		
+		when "0100" => --logic
+		
+			if byte2 = "0010" then					-- neg
+					if byte4 = "1000" then
+							registerTemp <= not(register1);
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+					elsif byte4 = "1001" then
+							registerTemp <= not(register1);
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;	
+					elsif byte4 = "0000" then
+							registerTemp <= not(register0);
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+					elsif byte4 = "0001" then	
+							registerTemp <= not(register0);
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+					end if;
+			else
+					if byte3(2) = '1' then 				--eor
+							if byte4 = "1000" then
+									registerTemp <= register0 xor register1;
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+							elsif byte4 = "1001" then
+									registerTemp <= register1 xor register1;
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+							elsif byte4 = "0000" then
+									registerTemp <= register0 xor register0;
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+							elsif byte4 = "0001" then	
+									registerTemp <= register1 xor register0;
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+							end if;
+					else --and
+							if byte4 = "1000" then
+									registerTemp <= register0 and register1;
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+							elsif byte4 = "1001" then
+									registerTemp <= register1 and register1;
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;	
+							elsif byte4 = "0000" then
+									registerTemp <= register0 and register0;
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+							elsif byte4 = "0001" then	
+									registerTemp <= register1 and register0;
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+							end if;
+					end if;
+			end if;
+		
+		when "0010" => --move
+		
+			if byte2 = "0000" then 						--Register0
+					registerTemp <= byte3 & byte4;
+					if upd = '1' then
+						register0 <= registerTemp;
+					end if;
+			elsif byte2 = "0001" then				--Register1
+					registerTemp <= byte3 & byte4;
+					if upd = '1' then
+						register1 <= registerTemp;
+					end if;
+			end if;
+		
+		when "0000" => --Shifts
+		
+			if byte2(3) = '1' then 					--shift right
+					if byte4 = "1000" then
+							registerTemp(7 downto 1) <= register1(6 downto 0);
+							registerTemp(0) <= '0';
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+					elsif byte4 = "1001" then
+							registerTemp(7 downto 1) <= register1(6 downto 0);
+							registerTemp(0) <= '0';
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;	
+					elsif byte4 = "0000" then
+							registerTemp(7 downto 1) <= register0(6 downto 0);
+							registerTemp(0) <= '0';
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+					elsif byte4 = "0001" then	
+							registerTemp(7 downto 1) <= register0(6 downto 0);
+							registerTemp(0) <= '0';
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+					end if;
+			else 											-- shift left
+					if byte4 = "1000" then
+							registerTemp(6 downto 0) <= register1(7 downto 1);
+							registerTemp(7) <= '0';
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+					elsif byte4 = "1001" then
+							registerTemp(6 downto 0) <= register1(7 downto 1);
+							registerTemp(7) <= '0';
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+					elsif byte4 = "0000" then
+							registerTemp(6 downto 0) <= register0(7 downto 1);
+							registerTemp(7) <= '0';
+									if upd = '1' then
+										register0 <= registerTemp;
+									end if;
+					elsif byte4 = "0001" then	
+							registerTemp(6 downto 0) <= register0(7 downto 1);
+							registerTemp(7) <= '0';
+									if upd = '1' then
+										register1 <= registerTemp;
+									end if;
+					end if;
+			end if;
+		
+		when others => --output
+			if byte4 = "0001" then
+					registerTemp <= register1;
+			else
+					registerTemp <= register0;
+			end if;
+			
+			--do we have to do something here or will this work?
+			
+	end case;
+	end if;
+	end process;
+	
+	C1: seg7out port map(registerTemp, output);
+
+END Behavioral;
